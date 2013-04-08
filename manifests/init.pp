@@ -26,7 +26,7 @@ class mongodb {
     owner => "root",
     group => "root",
     mode => 755,
-    source => "puppet:///modules/mongodb/mongod.conf"
+    source => "puppet:///modules/mongodb/mongodb.conf"
   }
   
   package { "wget":
