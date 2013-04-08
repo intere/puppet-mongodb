@@ -1,0 +1,77 @@
+#!/bin/sh
+
+# chkconfig: 35 85 15
+# description: Mongo is a scalable, document-oriented database.
+# processname: mongod
+# config: /etc/mongod.conf
+# pidfile: /var/run/mongo/mongo.pid
+
+#. /etc/rc.d/init.d/functions
+
+MONGOHOME="/var/local/mongodb-linux-i686-2.4.1"
+CONFIGFILE="/etc/mongod.conf"
+DBPATH=`awk -F= '/^dbpath[ ]*=/{print $2}' "$CONFIGFILE" |sed -e 's/^[ ]*//'`
+COMMAND="$MONGOHOME/bin/mongod"
+OPT="--config $CONFIGFILE"
+mongod=${MONGOD-$COMMAND}
+PIDFILE=/var/run/mongodb.pid
+
+usage() {
+  echo "Usage: $0 {start|stop|restart|status}"
+  exit 0
+}
+
+if [ $# != 1 ]; then
+  usage
+fi
+
+start()
+{
+  echo "Starting mongod"
+  $COMMAND $OPT 2>&1 >> ${MONGOHOME}/mongo-start.log
+  RETVAL=$?
+  echo
+  [ $RETVAL -eq 0 ] && touch ${PIDFILE}
+}
+
+stop()
+{
+  echo "Stopping mongod"
+  kill $(cat "$DBPATH"/mongod.lock)
+  RETVAL=$?
+  echo
+  [ $RETVAL -eq 0 ] && rm -f ${PIDFILE}
+}
+
+status() {
+        if [ -e ${PIDFILE} ] ; then
+                running=$(ps -aef | grep $(cat "${DBPATH}/mongod.lock"));
+                if [ "${running}" != "" ] ; then
+                        echo "MongoDB is running"
+                else
+                        echo "MongoDB is not running"
+                fi
+        else
+                echo "MongoDB is not running"
+        fi
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  status)
+    status
+    RETVAL=$?
+    ;;
+  * )
+    usage
+    ;;
+esac
