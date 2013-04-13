@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # chkconfig: 35 85 15
 # description: Mongo is a scalable, document-oriented database.
@@ -15,63 +15,70 @@ COMMAND="$MONGOHOME/bin/mongod"
 OPT="--config $CONFIGFILE"
 mongod=${MONGOD-$COMMAND}
 PIDFILE=/var/run/mongodb.pid
+LOCKFILE=/data/db/mongod.lock
 
 usage() {
-  echo "Usage: $0 {start|stop|restart|status}"
-  exit 0
+	echo "Usage: $0 {start|stop|restart|status}"
+	exit 0
 }
 
 if [ $# != 1 ]; then
-  usage
+	usage
 fi
 
 start()
 {
-  echo "Starting mongod"
-  $COMMAND $OPT 2>&1 >> ${MONGOHOME}/mongo-start.log
-  RETVAL=$?
-  echo
-  [ $RETVAL -eq 0 ] && touch ${PIDFILE}
+	status=$(status);
+	if [ "${status}" == "MongoDB is running" ] ; then
+		echo "MongoDB is already running";
+		return 1;
+	else
+		if [ -e "${LOCKFILE}" ] ; then
+			rm ${LOCKFILE};
+		fi
+	fi
+	
+	echo "Starting mongod"
+	$COMMAND $OPT 2>&1 >> ${MONGOHOME}/mongo-start.log
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch ${PIDFILE}
 }
 
 stop()
 {
-  echo "Stopping mongod"
-  kill $(cat "$DBPATH"/mongod.lock)
-  RETVAL=$?
-  echo
-  [ $RETVAL -eq 0 ] && rm -f ${PIDFILE}
+	echo "Stopping mongod"
+	kill $(cat "$DBPATH"/mongod.lock)
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f ${PIDFILE}
 }
 
 status() {
-        if [ -e ${PIDFILE} ] ; then
-                running=$(ps -aef | grep $(cat "${DBPATH}/mongod.lock"));
-                if [ "${running}" != "" ] ; then
-                        echo "MongoDB is running"
-                else
-                        echo "MongoDB is not running"
-                fi
-        else
-                echo "MongoDB is not running"
-        fi
+	running=$(ps -aef | grep -i mongod|grep -v grep|grep -v init.d|awk '{print $2}')
+	if [ "${running}" != "" ] ; then
+		echo "MongoDB is running"
+		else
+		echo "MongoDB is not running"
+	fi
 }
 
 case "$1" in
-  start)
-    start
-    ;;
-  stop)
-    stop
-    ;;
-  restart)
-    stop
-    start
-    ;;
-  status)
-    status
-    RETVAL=$?
-    ;;
-  * )
-    usage
-    ;;
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	status)
+		status
+		RETVAL=$?
+		;;
+	* )
+		usage
+		;;
 esac
