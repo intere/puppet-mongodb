@@ -3,13 +3,13 @@
 # chkconfig: 35 85 15
 # description: Mongo is a scalable, document-oriented database.
 # processname: mongod
-# config: /etc/mongod.conf
+# config: /etc/mongodb.conf
 # pidfile: /var/run/mongo/mongo.pid
 
 #. /etc/rc.d/init.d/functions
 
 MONGOHOME="/var/local/mongodb-linux-i686-2.4.1"
-CONFIGFILE="/etc/mongod.conf"
+CONFIGFILE="/etc/mongodb.conf"
 DBPATH=`awk -F= '/^dbpath[ ]*=/{print $2}' "$CONFIGFILE" |sed -e 's/^[ ]*//'`
 COMMAND="$MONGOHOME/bin/mongod"
 OPT="--config $CONFIGFILE"
